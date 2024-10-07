@@ -1,14 +1,14 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import os
 import qrcode_idtracker  # Import the new QR code tracker
 from PIL import Image, ImageTk
 from upload import upload_files
-from bucketmanagement import create_bucket, delete_bucket
+from bucketmanagement import create_bucket, delete_bucket, download_file_from_bucket
 
-# directories where the uploaded files and buckets are stored
-UPLOAD_DIR = "upload/"  # here normal uploads are placed
-BUCKET_DIR = "buckets/"  # here privatized uploads are kept in their buckets
+# Directories where the uploaded files and buckets are stored
+UPLOAD_DIR = "upload/"  # Normal uploads are placed here
+BUCKET_DIR = "buckets/"  # Privatized uploads are kept in their buckets
 
 def toggle_qr_code():
     selected_item = tree.selection()
@@ -34,8 +34,41 @@ def toggle_qr_code():
         print("No file selected.")
         qr_label.config(image='', text="QR Code display is disabled.")  # Clear the QR label if nothing is selected
 
-# A function for tree view
-def populate_tree():
+
+def download_selected_files():
+    selected_items = tree.selection()
+    if selected_items:
+        files_to_download = []
+        bucket_name = None
+        
+        for item in selected_items:
+            parent_item = tree.parent(item)
+            item_name = tree.item(item, 'text')
+
+            if parent_item:
+                bucket_name = tree.item(parent_item, 'text')
+                files_to_download.append(item_name)
+            else:
+                messagebox.showerror("Error", "Please select files from a bucket to download.")
+                return
+
+        if bucket_name:
+            # Ask the user to choose the download directory
+            download_dir = filedialog.askdirectory(title="Select Download Directory")
+            if download_dir:
+                # Create storageBucketDownloads folder in the selected directory
+                storage_bucket_downloads_dir = os.path.join(download_dir, "storageBucketDownloads")
+                os.makedirs(storage_bucket_downloads_dir, exist_ok=True)  # Create the directory if it doesn't exist
+
+                # Now download the files into this directory
+                for file_name in files_to_download:
+                    print(f"Downloading file: {file_name} from bucket: {bucket_name} to {storage_bucket_downloads_dir}")
+                    download_file_from_bucket(bucket_name, file_name, storage_bucket_downloads_dir)  # Pass the download directory
+                messagebox.showinfo("Download Status", f"Downloaded {len(files_to_download)} file(s) to '{storage_bucket_downloads_dir}'.")
+    else:
+        messagebox.showerror("Error", "No files selected. Please select files to download.")
+        
+def populate_tree(search_term=None):
     # Clear the tree view
     for item in tree.get_children():
         tree.delete(item)
@@ -47,22 +80,25 @@ def populate_tree():
     # Uploads
     if os.path.exists(UPLOAD_DIR):
         for file_name in os.listdir(UPLOAD_DIR):
-            file_path = os.path.join(UPLOAD_DIR, file_name)
-            if os.path.isfile(file_path):
-                tree.insert(uploads_node, 'end', text=file_name)
+            if search_term is None or search_term.lower() in file_name.lower():
+                file_path = os.path.join(UPLOAD_DIR, file_name)
+                if os.path.isfile(file_path):
+                    tree.insert(uploads_node, 'end', text=file_name)
 
     # Buckets
     if os.path.exists(BUCKET_DIR):
         for bucket_name in os.listdir(BUCKET_DIR):
-            bucket_path = os.path.join(BUCKET_DIR, bucket_name)
-            if os.path.isdir(bucket_path):
-                bucket_node = tree.insert(buckets_node, 'end', text=bucket_name)
+            if search_term is None or search_term.lower() in bucket_name.lower():
+                bucket_path = os.path.join(BUCKET_DIR, bucket_name)
+                if os.path.isdir(bucket_path):
+                    bucket_node = tree.insert(buckets_node, 'end', text=bucket_name)
 
-                # Files in the bucket
-                for file_name in os.listdir(bucket_path):
-                    file_path = os.path.join(bucket_path, file_name)
-                    if os.path.isfile(file_path):
-                        tree.insert(bucket_node, 'end', text=file_name)
+                    # Files in the bucket
+                    for file_name in os.listdir(bucket_path):
+                        if search_term is None or search_term.lower() in file_name.lower():
+                            file_path = os.path.join(bucket_path, file_name)
+                            if os.path.isfile(file_path):
+                                tree.insert(bucket_node, 'end', text=file_name)
 
 def initiate_upload():
     upload_files()  # Upload function
@@ -76,6 +112,10 @@ def open_create_bucket():
 def open_delete_bucket():
     delete_bucket()  # Allows user to delete bucket
     populate_tree()  # Refresh the tree
+
+def search_files():
+    search_term = search_entry.get()
+    populate_tree(search_term)  # Populate tree with filtered results based on the search term
 
 # Main window
 root = tk.Tk()
@@ -92,8 +132,12 @@ search_label.pack(anchor="w")
 search_entry = tk.Entry(left_frame, width=40)
 search_entry.pack(anchor="w", pady=5)
 
-# Treeview for folder structure
-tree = ttk.Treeview(left_frame)
+# Search button
+search_button = tk.Button(left_frame, text="Search", command=search_files)
+search_button.pack(pady=5)
+
+# Treeview for folder structure with multi-selection enabled
+tree = ttk.Treeview(left_frame, selectmode='extended')  # Set selection mode to allow multiple selection
 tree.pack(expand=True, fill=tk.BOTH)
 
 # Frame for menu and settings (right side)
@@ -109,6 +153,10 @@ create_bucket_button.pack(pady=10)
 
 delete_bucket_button = tk.Button(right_frame, text="Delete Bucket", command=open_delete_bucket)
 delete_bucket_button.pack(pady=10)
+
+# New button for downloading files
+download_button = tk.Button(right_frame, text="Download Selected File(s)", command=download_selected_files)
+download_button.pack(pady=10)
 
 settings_button = tk.Button(right_frame, text="Settings")
 settings_button.pack(pady=10)
