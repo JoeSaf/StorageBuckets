@@ -1,0 +1,18 @@
+# created by virtualenv automatically
+
+upload/
+*.json
+HowTo's.txt
+
+buckets/
+
+venv/
+
+
+bin/
+lib/
+
+# Ignore Python bytecode
+__pycache__/
+*.pyc
+pyvenv.cfg
