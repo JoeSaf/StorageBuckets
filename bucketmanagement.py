@@ -1,4 +1,5 @@
 import os
+import qrcode_idtracker  # Import the new QR code tracker
 import shutil
 from tkinter import simpledialog, messagebox
 
