@@ -14,24 +14,23 @@ def toggle_qr_code():
     selected_item = tree.selection()
     if selected_item:
         file_name = tree.item(selected_item, 'text')
-        file_path = os.path.join(UPLOAD_DIR, file_name)  # Corrected file path to check in UPLOAD_DIR
         
-        print(f"Selected file: {file_name}")
-        print(f"Generating QR code for file path: {file_path}")
+        # Check both UPLOAD_DIR and BUCKET_DIR for the file
+        file_path = os.path.join(UPLOAD_DIR, file_name)
+        if not os.path.exists(file_path):
+            file_path = os.path.join(BUCKET_DIR, file_name)
 
-        # Generate QR code
-        qr_image = qrcode_idtracker.generate_qr_code(file_path)
-        
-        # Check if qr_image is valid
-        if qr_image:
-            print("QR code generated successfully.")
-            qr_label.config(image=qr_image)
-            qr_label.image = qr_image  # Keep a reference to avoid garbage collection
+        print(f"Selected file: {file_name}")
+        print(f"Generating QR code for: {file_path}")
+
+        qr_tk_img = qrcode_idtracker.generate_qr_code(file_path)
+
+        if qr_tk_img:
+            qr_label.config(image=qr_tk_img)
+            qr_label.image = qr_tk_img  # Prevent garbage collection
         else:
-            print("Failed to generate QR code.")
             messagebox.showerror("Error", "Could not generate QR code.")
     else:
-        print("No file selected.")
         qr_label.config(image='', text="QR Code display is disabled.")  # Clear the QR label if nothing is selected
 
 
