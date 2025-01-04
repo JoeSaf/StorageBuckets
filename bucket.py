@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
+#for binary search
+import bisect
+
 import qrcode_idtracker  # Import the new QR code tracker
 from PIL import Image, ImageTk
 from upload import upload_files
@@ -66,7 +69,9 @@ def download_selected_files():
                 messagebox.showinfo("Download Status", f"Downloaded {len(files_to_download)} file(s) to '{storage_bucket_downloads_dir}'.")
     else:
         messagebox.showerror("Error", "No files selected. Please select files to download.")
-        
+
+#search algorithm
+# the search algorithm used here is : binary search  
 def populate_tree(search_term=None):
     # Clear the tree view
     for item in tree.get_children():
@@ -78,7 +83,8 @@ def populate_tree(search_term=None):
 
     # Uploads
     if os.path.exists(UPLOAD_DIR):
-        for file_name in os.listdir(UPLOAD_DIR):
+        files = sorted(os.listdir(UPLOAD_DIR))  # Sort the files to enable binary search
+        for file_name in files:
             if search_term is None or search_term.lower() in file_name.lower():
                 file_path = os.path.join(UPLOAD_DIR, file_name)
                 if os.path.isfile(file_path):
@@ -86,19 +92,21 @@ def populate_tree(search_term=None):
 
     # Buckets
     if os.path.exists(BUCKET_DIR):
-        for bucket_name in os.listdir(BUCKET_DIR):
+        buckets = sorted(os.listdir(BUCKET_DIR))  # Sort the bucket names
+        for bucket_name in buckets:
             if search_term is None or search_term.lower() in bucket_name.lower():
                 bucket_path = os.path.join(BUCKET_DIR, bucket_name)
                 if os.path.isdir(bucket_path):
                     bucket_node = tree.insert(buckets_node, 'end', text=bucket_name)
 
                     # Files in the bucket
-                    for file_name in os.listdir(bucket_path):
+                    files_in_bucket = sorted(os.listdir(bucket_path))  # Sort files in the bucket
+                    for file_name in files_in_bucket:
                         if search_term is None or search_term.lower() in file_name.lower():
                             file_path = os.path.join(bucket_path, file_name)
                             if os.path.isfile(file_path):
                                 tree.insert(bucket_node, 'end', text=file_name)
-
+                                
 def initiate_upload():
     upload_files()  # Upload function
     populate_tree()  # Refresh function
