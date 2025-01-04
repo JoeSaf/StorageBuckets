@@ -2,7 +2,6 @@
 
 upload/
 *.json
-HowTo's.txt
 
 buckets/
 storageBucketDownloads/

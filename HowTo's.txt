@@ -1,0 +1,16 @@
+how to generate requirements
+run:
+
+pip freeze > requirements.txt
+
+
+things left undone:
+
+qrcode display still doesnt work
+no settings page
+still cant download folders
+no database has been setup to simulate cloud storage
+
+
+python /home/senjoe/Documents/StorageBuckets/bucket.py
+
